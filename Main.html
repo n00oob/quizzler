@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Demokrati vs Diktatur - Quiz Välj (fixed layout)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --bg:#0f1720;--card:#0b1220;--muted:#9fb2d6;--accent:#2563eb;
+  }
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#e6eef8;display:flex;justify-content:center;padding:24px}
+  .container{width:980px;max-width:98vw;background:#111827;padding:22px;border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,.6)}
+  h1{margin:0 0 6px;font-size:22px}
+  .lead{margin:0 0 14px;color:var(--muted)}
+  /* make cards fixed-size and vertically laid out */
+  .card{background:var(--card);padding:18px;border-radius:10px;display:flex;flex-direction:column;gap:12px;min-height:380px;max-height:520px;box-sizing:border-box;}
+  .qmeta{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .qnum{font-size:13px;color:var(--muted);min-width:160px}
+
+  /* progress */
+  .progressWrapper{flex:1;position:relative;height:18px;margin-left:12px}
+  .progressBar{position:relative;height:18px;background:rgba(255,255,255,0.04);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+  .progressFill{position:absolute;left:0;top:0;height:100%;width:0%;background:var(--accent);border-radius:12px;transition:width 200ms cubic-bezier(.2,.9,.2,1)}
+  .tickContainer{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none}
+  .tick{position:absolute;top:50%;transform:translateY(-50%);width:2px;background:rgba(255,255,255,0.06);height:26px;border-radius:2px}
+  .tick.done{background:#164e2b}
+  .tick.outline{box-shadow:0 0 0 2px rgba(37,99,235,0.06) inset}
+  .tick.hiddenTick{opacity:0}
+
+  .qtext{font-weight:700;margin-bottom:6px; /* fixed height for question */ max-height:72px; overflow:auto; padding-right:6px}
+  .answers{display:flex;flex-direction:column;gap:10px; /* answers area fixed and scrollable */ overflow:auto; padding-right:6px; max-height:220px}
+  .choice{background:#071428;border:1px solid #122032;padding:12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .choice:hover{filter:brightness(1.06)}
+  .choice .label{min-width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;background:rgba(255,255,255,0.03)}
+  .choice .text{flex:1}
+  .choice.selected{outline:3px solid rgba(37,99,235,0.25)}
+  .controls{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  .btn{background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
+  /*.muted{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}*/
+  .hidden{display:none}
+  .small{font-size:13px;color:var(--muted)}
+
+  /* result area fits into same card size and scrolls if table is long */
+  .resultsWrapper{flex:1;overflow:auto;padding-right:6px}
+  .table{width:100%;border-collapse:collapse;margin-top:10px}
+  .table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:left;font-size:14px;vertical-align:top}
+  .correct{color:#A6EEA7;font-weight:700}
+  .wrong{background:#7a0b0b;color:#ffcaca;font-weight:700;padding:3px 8px;border-radius:8px;box-shadow:0 1px 3px rgba(122,11,11,0.25);display:inline-block;line-height:1.1}
+  .table td.question-cell{max-width:520px;white-space:normal}
+  .table td.answer-cell{width:260px;vertical-align:middle}
+
+  .selector{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .quizCard{padding:14px;border-radius:10px;background:#071428;border:1px solid #122032;min-width:220px;cursor:pointer}
+  .quizCard:hover{filter:brightness(1.06)}
+  .center{display:flex;justify-content:center}
+  /* make sure scrollbars don't break layout on narrow screens */
+  @media (max-width:600px){
+    .container{padding:12px}
+    .card{min-height:420px;max-height:640px}
+    .answers{max-height:260px}
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Quiz: Demokrati vs Diktatur — Välj Quiz</h1>
+    <div class="lead">Välj vilken quiz du vill köra. Varje quiz är en separat fråga-grupp.</div>
+
+    <!-- Selector screen -->
+    <div id="selector" class="card">
+      <div class="selector">
+        <div class="quizCard" data-quiz="1">
+          <strong>Quiz 1 — Grundläggande demokrati</strong>
+          <div class="small">Val, rättssäkerhet, maktfördelning, offentlighet m.m.</div>
+        </div>
+        <div class="quizCard" data-quiz="2">
+          <strong>Quiz 2 — Lagar & EU/Stat/Region/Kommun</strong>
+          <div class="small">Motioner, propositioner, vem gör vad, EU-exempel m.m.</div>
+        </div>
+        <div class="quizCard" data-quiz="3">
+          <strong>Quiz 3 — Ideologier & politik</strong>
+          <div class="small">Socialism, liberalism, konservatism, lobbyism, parlamentarism m.m.</div>
+        </div>
+      </div>
+      <div class="small" style="margin-top:12px">Du kan byta quiz efter att du klarat en också.</div>
+    </div>
+
+    <!-- Quiz card -->
+    <div id="card" class="card hidden">
+      <div class="qmeta">
+        <div class="qnum" id="qnum"></div>
+        <div class="progressWrapper" aria-hidden>
+          <div class="progressBar" id="progressBar">
+            <div class="progressFill" id="progressFill"></div>
+            <div class="tickContainer" id="tickContainer"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="qtext" class="qtext"></div>
+
+      <div id="answers" class="answers" role="list"></div>
+
+      <div class="controls">
+        <button id="skip" class="btn" type="button">Hoppa över</button>
+        <div><div class="small" id="hint">Klicka ett svar för att gå vidare</div></div>
+      </div>
+    </div>
+
+    <!-- Result screen -->
+    <div id="resultScreen" class="card hidden">
+      <h2>Resultat</h2>
+      <div class="small">Här ser du dina svar och rätta svar.</div>
+      <div class="resultsWrapper">
+        <div id="summary" class="results"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button id="retry" class="btn">Gör om quizzen</button>
+        <button id="selectAnother" class="btn">Välj annat quiz</button>
+        <button id="download" class="btn">Ladda ner som text</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const fullQuestions = [
+  { id:1, text:"Vad krävs för att ett land ska kallas demokrati?", choices:[{id:'A', txt:"Endast ett parti"},{id:'B', txt:"Regelbunda val och flera partier"},{id:'C', txt:"Snäll ledare räcker"}], answer:'B'},
+  { id:2, text:"Vad betyder majoritetsprincipen?", choices:[{id:'A', txt:"Flest röster bestämmer"},{id:'B', txt:"Staten bestämmer allt"},{id:'C', txt:"Minsta gruppen bestämmer"}], answer:'A'},
+  { id:3, text:"Vad är rättssäkerhet?", choices:[{id:'A', txt:"Polisen har alltid rätt"},{id:'B', txt:"Ingen straffas utan dom"},{id:'C', txt:"Regeringen bestämmer domar"}], answer:'B'},
+  { id:4, text:"Vad är offentlighetsprincipen?", choices:[{id:'A', txt:"Staten kan granskas öppet"},{id:'B', txt:"Privata meddelanden måste visas"},{id:'C', txt:"Endast domstolar öppna"}], answer:'A'},
+  { id:5, text:"Vad är censur?", choices:[{id:'A', txt:"Ta bort kritik i media"},{id:'B', txt:"Alla får säga allt"},{id:'C', txt:"Fria och öppna val"}], answer:'A'},
+  { id:6, text:"Vilken typ av demokrati har Sverige främst?", choices:[{id:'A', txt:"Direktdemokrati"},{id:'B', txt:"Representativ demokrati"},{id:'C', txt:"Religiös teokrati"}], answer:'B'},
+  { id:7, text:"Vilken av dessa är en partidiktatur?", choices:[{id:'A', txt:"Sverige"},{id:'B', txt:"Kina"},{id:'C', txt:"Norge"}], answer:'B'},
+  { id:8, text:"Vad innebär föreningsfrihet?", choices:[{id:'A', txt:"Får inte gå med i föreningar"},{id:'B', txt:"Får bilda och gå med i föreningar"},{id:'C', txt:"Staten väljer föreningar"}], answer:'B'},
+  { id:9, text:"Vad menas med maktfördelning?", choices:[{id:'A', txt:"All makt hos en person"},{id:'B', txt:"Makt delas mellan olika organ"},{id:'C', txt:"Militären styr landet"}], answer:'B'},
+  { id:10, text:"Vad är en militärdiktatur?", choices:[{id:'A', txt:"Militär tar makten via kupp"},{id:'B', txt:"Militär saknar makt"},{id:'C', txt:"Militär hjälper polisen"}], answer:'A'},
+  { id:11, text:"Vad är ett kännetecken för en teokrati?", choices:[{id:'A', txt:"Religiösa ledare styr landet"},{id:'B', txt:"Alltid fria medier"},{id:'C', txt:"Alla får rösta fritt"}], answer:'A'},
+  { id:12, text:"Vad betyder censur i praktiken?", choices:[{id:'A', txt:"Negativ info tas bort"},{id:'B', txt:"Alla åsikter publiceras fritt"},{id:'C', txt:"Val är alltid hemliga"}], answer:'A'},
+  { id:13, text:"Vilken princip skyddar dig från att bli fängslad utan domstol?", choices:[{id:'A', txt:"Offentlighetsprincipen"},{id:'B', txt:"Rättssäkerhet"},{id:'C', txt:"Majoritetsprincipen"}], answer:'B'},
+  { id:14, text:"Vad är ett problem med direktdemokrati för små frågor?", choices:[{id:'A', txt:"Alla måste sätta sig in i detaljerna"},{id:'B', txt:"Ger alltid sämre resultat"},{id:'C', txt:"Endast politiker får rösta"}], answer:'A'},
+  { id:15, text:"Vad är en motion?", choices:[{id:'A', txt:"Förslag från riksdagsledamot"},{id:'B', txt:"Förslag från regeringen"},{id:'C', txt:"Beslut i EU-parlamentet"}], answer:'A'},
+  { id:16, text:"Vad är en proposition?", choices:[{id:'A', txt:"Förslag från privatperson"},{id:'B', txt:"Förslag från regeringen"},{id:'C', txt:"Förslag som gäller EU-lagar"}], answer:'B'},
+  { id:17, text:"Varför går fler propositioner igenom än motioner?", choices:[{id:'A', txt:"Regeringen har mer underlag"},{id:'B', txt:"Motioner får ej rösta på"},{id:'C', txt:"Motioner ska godkännas av EU"}], answer:'A'},
+  { id:18, text:"Vad händer efter ett lagförslag lagts fram?", choices:[{id:'A', txt:"Skickas direkt till EU"},{id:'B', txt:"Diskuteras i utskott och grupper"},{id:'C', txt:"Gäller direkt som lag"}], answer:'B'},
+  { id:19, text:"Vad kallas riksdagens omröstning?", choices:[{id:'A', txt:"Votering"},{id:'B', txt:"Delegation"},{id:'C', txt:"Regeringssammanträde"}], answer:'A'},
+  { id:20, text:"Vem ansvarar för skolor?", choices:[{id:'A', txt:"Endast staten"},{id:'B', txt:"Endast kommunen"},{id:'C', txt:"Både kommun och stat"}], answer:'C'},
+  { id:21, text:"Vem ansvarar för sophantering?", choices:[{id:'A', txt:"Kommunen ansvarar"},{id:'B', txt:"Regionen ansvarar"},{id:'C', txt:"EU ansvarar"}], answer:'A'},
+  { id:22, text:"Vem ansvarar för sjukhusen?", choices:[{id:'A', txt:"Regionen ansvarar"},{id:'B', txt:"Kommunen ansvarar"},{id:'C', txt:"Riksdagen ansvarar"}], answer:'A'},
+  { id:23, text:"Vilken nivå sköter lokala bussar?", choices:[{id:'A', txt:"Regionen sköter dem"},{id:'B', txt:"Kommunen sköter dem"},{id:'C', txt:"EU sköter dem"}], answer:'B'},
+  { id:24, text:"Vilken nivå sköter regionsbussar?", choices:[{id:'A', txt:"Kommunen sköter dem"},{id:'B', txt:"Regionen sköter dem"},{id:'C', txt:"Staten sköter dem"}], answer:'B'},
+  { id:25, text:"Vem bestämmer lagar och nationell budget?", choices:[{id:'A', txt:"Regionen bestämmer"},{id:'B', txt:"Staten bestämmer"},{id:'C', txt:"Kommunen bestämmer"}], answer:'B'},
+  { id:26, text:"Vad har EU bland annat ansvar för?", choices:[{id:'A', txt:"Jordbruk och utrikeshandel"},{id:'B', txt:"Lokala skolplaner"},{id:'C', txt:"Sophantering och trafik"}], answer:'A'},
+  { id:27, text:"Vilket område delvis kan EU påverka i vården?", choices:[{id:'A', txt:"Vilka mediciner som skrivs ut"},{id:'B', txt:"Vilka skolor byggs"},{id:'C', txt:"Hur busslinjer går"}], answer:'A'},
+  { id:28, text:"Vad var ett exempel på EU-hjälp vid kris i Sverige?", choices:[{id:'A', txt:"Billigare skolmat"},{id:'B', txt:"Utländsk personal och brandflyg"},{id:'C', txt:"Gratis lokaltrafik"}], answer:'B'},
+  { id:29, text:"Vilken nivå ansvarar för armé och polis?", choices:[{id:'A', txt:"Kommunen ansvarar"},{id:'B', txt:"Regionen ansvarar"},{id:'C', txt:"Staten ansvarar"}], answer:'C'},
+  { id:30, text:"Vad är EU:s inre marknad?", choices:[{id:'A', txt:"Gemensam handelsmarknad"},{id:'B', txt:"Gratis sjukvård i EU"},{id:'C', txt:"Region-samarbete endast"}], answer:'A'},
+  { id:31, text:"Vad handlar socialism mest om?", choices:[{id:'A', txt:"Individens frihet"},{id:'B', txt:"Alla delar lika i gemenskap"},{id:'C', txt:"Bevara traditioner"}], answer:'B'},
+  { id:32, text:"Vad betyder 'var och ens förmåga, åt var och ens behov'?", choices:[{id:'A', txt:"Få utifrån behov"},{id:'B', txt:"Endast hårt arbetande får mer"},{id:'C', txt:"Staten får ej blanda sig"}], answer:'A'},
+  { id:33, text:"Vad prioriterar liberalismen?", choices:[{id:'A', txt:"Alla får exakt lika lön"},{id:'B', txt:"Individens frihet och val"},{id:'C', txt:"Endast staten styr"}], answer:'B'},
+  { id:34, text:"Vilken idé hänger ihop med konservatism?", choices:[{id:'A', txt:"Snabba stora förändringar"},{id:'B', txt:"Bevara och förändra långsamt"},{id:'C', txt:"Avskaffa institutioner"}], answer:'B'},
+  { id:35, text:"Vad lägger nationalism tonvikt på?", choices:[{id:'A', txt:"Landets kultur och språk"},{id:'B', txt:"Globalt samarbete brett"},{id:'C', txt:"Avskaffa alla gränser"}], answer:'A'},
+  { id:36, text:"Vad fokuserar ekologism mest på?", choices:[{id:'A', txt:"Miljön som beslutsguide"},{id:'B', txt:"Endast ekonomi och marknad"},{id:'C', txt:"Avskaffa demokratin"}], answer:'A'},
+  { id:37, text:"Vad vill feminismen uppnå?", choices:[{id:'A', txt:"Kvinnor mer makt än män"},{id:'B', txt:"Jämställdhet mellan könen"},{id:'C', txt:"Endast kvinnor får rösta"}], answer:'B'},
+  { id:38, text:"Vilket problem finns fortfarande mellan könen?", choices:[{id:'A', txt:"Ojämna löner och möjligheter"},{id:'B', txt:"Kvinnor tjänar alltid mer"},{id:'C', txt:"Män får ej arbeta"}], answer:'A'},
+  { id:39, text:"Vad är censur?", choices:[{id:'A', txt:"Ta bort negativ information"},{id:'B', txt:"Publicera alla åsikter fritt"},{id:'C', txt:"Domstolar bedömer nyheter"}], answer:'A'},
+  { id:40, text:"Vad är lobbyism?", choices:[{id:'A', txt:"Företag försöker påverka beslut"},{id:'B', txt:"Väljare demonstrerar offentligt"},{id:'C', txt:"EU skriver medlemslagar"}], answer:'A'},
+  { id:41, text:"Hur skiljer lobbyism i Sverige och EU?", choices:[{id:'A', txt:"Mer organiserat i EU"},{id:'B', txt:"Lobbyism saknas i EU"},{id:'C', txt:"Svenska företag får ej påverka"}], answer:'A'},
+  { id:42, text:"Skillnad mellan lobbying och mutor?", choices:[{id:'A', txt:"Lobbying är alltid olagligt"},{id:'B', txt:"Stort stöd kan likna mutor"},{id:'C', txt:"Ingen skillnad alls"}], answer:'B'},
+  { id:43, text:"Vad är opinion?", choices:[{id:'A', txt:"Skapa gemensam åsikt för påverkan"},{id:'B', txt:"Beslut som regeringen fattar"},{id:'C', txt:"Internt partiärende"}], answer:'A'},
+  { id:44, text:"Vilket exempel finns för att skapa opinion?", choices:[{id:'A', txt:"Starta Instagram eller demonstrera"},{id:'B', txt:"Skriva privata brev"},{id:'C', txt:"Stänga alla skolor"}], answer:'A'},
+  { id:45, text:"Vad betyder parlamentarism i korthet?", choices:[{id:'A', txt:"Folket via riksdagen styr regeringen"},{id:'B', txt:"Kungen väljer riksdagen"},{id:'C', txt:"Domstolar styr regeringen"}], answer:'A'},
+  { id:46, text:"Vad kan hända om regeringen tappar stöd?", choices:[{id:'A', txt:"Inget, sitter kvar ändå"},{id:'B', txt:"Tvingas avgå via misstroende"},{id:'C', txt:"EU tar över styrningen"}], answer:'B'},
+  { id:47, text:"Vad är en misstroendeförklaring?", choices:[{id:'A', txt:"Riksdagen förlorar förtroende"},{id:'B', txt:"Domstolen fäller en minister"},{id:'C', txt:"EU förbjuder åsikter"}], answer:'A'},
+  { id:48, text:"Vad är partistöd?", choices:[{id:'A', txt:"Statliga pengar till partier"},{id:'B', txt:"Privata utländska donationer"},{id:'C', txt:"Pris för bästa parti"}], answer:'A'},
+  { id:49, text:"Varför kan lobbyism göra politiker 'skyldiga' till företag?", choices:[{id:'A', txt:"Politiker återgäldar stöd till företag"},{id:'B', txt:"Politiker får aldrig prata med företag"},{id:'C', txt:"Företag styr domstolar"}], answer:'A'}
+];
+
+  const quiz1 = fullQuestions.slice(0,16);
+  const quiz2 = fullQuestions.slice(16,30);
+  const quiz3 = fullQuestions.slice(30);
+
+  let currentQuiz = null, currentQuizName = '', qpool = [], index = 0, responses = [];
+
+  const selector = document.getElementById('selector');
+  const card = document.getElementById('card');
+  const resultScreen = document.getElementById('resultScreen');
+  const qnum = document.getElementById('qnum');
+  const qtext = document.getElementById('qtext');
+  const answersDiv = document.getElementById('answers');
+  const tickContainer = document.getElementById('tickContainer');
+  const progressFill = document.getElementById('progressFill');
+  const summary = document.getElementById('summary');
+  const retry = document.getElementById('retry');
+  const download = document.getElementById('download');
+  const skip = document.getElementById('skip');
+  const selectAnother = document.getElementById('selectAnother');
+
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a }
+
+  function startQuiz(quizArray, name){
+    currentQuiz = quizArray; currentQuizName = name || 'Quiz';
+    qpool = shuffle(quizArray.slice()); index = 0; responses = [];
+    selector.classList.add('hidden'); resultScreen.classList.add('hidden'); card.classList.remove('hidden');
+    buildTicks(); renderQuestion();
+  }
+
+  function buildTicks(){
+    tickContainer.innerHTML = '';
+    const total = qpool.length || 1;
+    for(let qIndex = 0; qIndex < total; qIndex++){
+      const t = document.createElement('div');
+      t.className = 'tick outline';
+      if(qIndex === 0 || qIndex === total-1) t.classList.add('hiddenTick');
+      const leftPct = (qIndex / Math.max(1, total - 1)) * 100;
+      t.style.left = `calc(${leftPct}% - 1px)`;
+      tickContainer.appendChild(t);
+    }
+  }
+
+  function updateProgress(){
+    const total = qpool.length || 1;
+    const pct = total > 1 ? (index / (total - 1)) * 100 : 100;
+    progressFill.style.width = pct + '%';
+    const ticks = Array.from(tickContainer.children);
+    ticks.forEach((t, i)=>{ if(i < index) t.classList.add('done'); else t.classList.remove('done'); });
+  }
+
+  function renderQuestion(){
+    if(index >= qpool.length){ showResults(); return; }
+    updateProgress();
+    const q = qpool[index];
+    qnum.textContent = currentQuizName + ' — Fråga ' + (index+1) + ' av ' + qpool.length;
+    qtext.textContent = q.text;
+    answersDiv.innerHTML = '';
+
+    const shuffledChoices = shuffle(q.choices.map(c=>Object.assign({},c)));
+    const labels = ['A','B','C'];
+    shuffledChoices.forEach((c,i)=> c.display = labels[i]);
+    const correctDisplay = (shuffledChoices.find(c=>c.id===q.answer) || shuffledChoices[0]).display;
+    const ordered = shuffledChoices.sort((x,y)=> x.display.localeCompare(y.display));
+
+    ordered.forEach(c=>{
+      const btn = document.createElement('div');
+      btn.className = 'choice';
+      btn.setAttribute('data-display', c.display);
+      btn.setAttribute('role','button');
+      btn.tabIndex = 0;
+      btn.innerHTML = '<div class="label"><strong>' + c.display + '</strong></div><div class="text">' + c.txt + '</div>';
+      btn.addEventListener('click', ()=> selectChoice(q, c.display, correctDisplay, shuffledChoices));
+      btn.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') selectChoice(q, c.display, correctDisplay, shuffledChoices) });
+      answersDiv.appendChild(btn);
+    });
+
+    updateProgress();
+  }
+
+  function selectChoice(q, displayId, correctDisplay, choices){
+    responses.push({
+      qid: q.id, qtext: q.text, selected: displayId, correctDisplay: correctDisplay,
+      choices: choices.map(c=>({display:c.display, txt:c.txt, origId:c.id}))
+    });
+    const children = Array.from(answersDiv.children);
+    children.forEach(ch=>{ if(ch.getAttribute('data-display') === displayId) ch.classList.add('selected'); ch.style.pointerEvents = 'none'; });
+    setTimeout(()=>{ index++; renderQuestion(); }, 200);
+  }
+
+  function showResults(){
+    card.classList.add('hidden'); resultScreen.classList.remove('hidden');
+    let html = '<table class="table"><thead><tr><th>Fråga</th><th>Ditt svar</th><th>Rätt svar</th></tr></thead><tbody>';
+    let correctCount = 0;
+    responses.forEach((r,i)=>{
+      const selObj = r.choices.find(c=>c.display===r.selected) || {txt:'Ej svar'};
+      const corrObj = r.choices.find(c=>c.display===r.correctDisplay) || {txt:'Okänt'};
+      const ok = r.selected === r.correctDisplay; if(ok) correctCount++;
+      html += '<tr><td class="question-cell">'+(i+1)+'. '+escapeHtml(r.qtext)+'</td>'
+           +  '<td class="answer-cell '+(ok?'correct':'wrong')+'">'+escapeHtml(r.selected === null ? 'Ej svar.' : r.selected+'. '+selObj.txt)+'</td>'
+           +  '<td class="answer-cell correct">'+escapeHtml(r.correctDisplay+'. '+corrObj.txt)+'</td></tr>';
+    });
+    html += '</tbody></table>';
+    html = '<div class="small"><strong>' + currentQuizName + '</strong> — Poäng: <strong>' + correctCount + ' / ' + responses.length + '</strong></div>' + html;
+    summary.innerHTML = html;
+  }
+
+  function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+  document.querySelectorAll('.quizCard').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const q = el.getAttribute('data-quiz');
+      if(q === '1') startQuiz(quiz1, 'Quiz 1 — Demokrati (grund)');
+      if(q === '2') startQuiz(quiz2, 'Quiz 2 — Lagar & nivåer');
+      if(q === '3') startQuiz(quiz3, 'Quiz 3 — Ideologier & politik');
+    });
+  });
+
+  retry.addEventListener('click', ()=>{ if(!currentQuiz) return; startQuiz(currentQuiz, currentQuizName); });
+  selectAnother.addEventListener('click', ()=>{ resultScreen.classList.add('hidden'); selector.classList.remove('hidden'); });
+  download.addEventListener('click', ()=>{
+    let text = currentQuizName + ' — Quizresultat\n\n';
+    responses.forEach((r,i)=>{
+      const selObj = r.choices.find(c=>c.display===r.selected) || {txt:'Ej svar'};
+      const corrObj = r.choices.find(c=>c.display===r.correctDisplay) || {txt:'Okänt'};
+      text += (i+1)+'. '+r.qtext+'\nDitt svar: '+(r.selected||'Ej svar')+'. '+selObj.txt+'\nRätt svar: '+r.correctDisplay+'. '+corrObj.txt+'\n\n';
+    });
+    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'quiz_result.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  skip.addEventListener('click', ()=>{
+    if(index >= qpool.length) return;
+    const q = qpool[index];
+    const shuffledChoices = shuffle(q.choices.map(c=>Object.assign({},c)));
+    const labels = ['A','B','C']; shuffledChoices.forEach((c,i)=> c.display = labels[i]);
+    const correctDisplay = (shuffledChoices.find(c=>c.id===q.answer) || shuffledChoices[0]).display;
+    responses.push({qid:q.id, qtext:q.text, selected:null, correctDisplay:correctDisplay, choices: shuffledChoices.map(c=>({display:c.display, txt:c.txt, origId:c.id}))});
+    index++; renderQuestion();
+  });
+
+  selector.classList.remove('hidden'); card.classList.add('hidden'); resultScreen.classList.add('hidden');
+
+})();
+</script>
+</body>
+</html>
